@@ -12,7 +12,7 @@ using Nether.Data.Identity;
 namespace Nether.Web.Features.Identity.Controllers
 {
     [AllowAnonymous]
-    [Route("api/registration")]
+    [Route("registration")]
     public class RegistrationController : Controller
     {
         private readonly IUserStore _userStore;
@@ -31,11 +31,11 @@ namespace Nether.Web.Features.Identity.Controllers
         }
 
         [HttpPost("device")]
-        public async Task<IActionResult> Post([FromBody]string deviceId)
+        public async Task<IActionResult> Post([FromBody]Login login)
         {
-            _logger.LogInformation($"Registering device {deviceId}");
+            _logger.LogInformation($"Registering device {login.ProviderId}");
 
-            var user = await _userStore.GetUserByLoginAsync(LoginProvider.UserNamePassword, deviceId);
+            var user = await _userStore.GetUserByLoginAsync(LoginProvider.UserNamePassword, login.ProviderId);
             if (user != null)
             {
                 throw new ArgumentException($"User with deviceId is already registered");
@@ -46,19 +46,14 @@ namespace Nether.Web.Features.Identity.Controllers
             user.Role = RoleNames.Player;
             user.Logins = new List<Login>();
             await _userStore.SaveUserAsync(user);
-            string providerId = deviceId;
-            string userId = deviceId;
-            string providerType = LoginProvider.UserNamePassword;
+            login.ProviderType = LoginProvider.UserNamePassword;
             string password = Guid.NewGuid().ToString("d");
-            var login = new Login()
-            {
-                ProviderId = providerId,
-                ProviderType = providerType,
-                ProviderData =  _passwordHasher.HashPassword(password)
-            };
+            login.ProviderData = _passwordHasher.HashPassword(password);
             user.Logins.Add(login);
             await _userStore.SaveUserAsync(user);
-            return Json(new { password });
+            // return non hashed password once to let client store it
+            login.ProviderData = password;
+            return Json(login);
         }
     }
 }

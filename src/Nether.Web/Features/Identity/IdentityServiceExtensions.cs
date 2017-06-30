@@ -59,7 +59,7 @@ namespace Nether.Web.Features.Identity
             ILogger logger,
             IHostingEnvironment hostingEnvironment)
         {
-            if (!hostingEnvironment.IsDevelopment())
+            if (hostingEnvironment.IsProduction())
             {
                 throw new NotSupportedException($"The Identity Server configuration is currently only intended for Development environments. Current environment: '{hostingEnvironment.EnvironmentName}'");
             }
