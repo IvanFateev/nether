@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using Nether.Data.Identity;
+using Nether.Data.PlayerManagement;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -18,14 +19,17 @@ namespace Nether.Web.Features.Identity.Controllers
         private readonly IUserStore _userStore;
         private readonly IPasswordHasher _passwordHasher;
         private readonly ILogger _logger;
+        private readonly IPlayerManagementStore _playerStore;
 
         public RegistrationController(
             IUserStore userStore,
             IPasswordHasher passwordHasher,
-            ILogger<RegistrationController> logger
+            ILogger<RegistrationController> logger,
+            IPlayerManagementStore playerStore
         )
         {
             _userStore = userStore;
+            _playerStore = playerStore;
             _passwordHasher = passwordHasher;
             _logger = logger;
         }
@@ -53,6 +57,13 @@ namespace Nether.Web.Features.Identity.Controllers
             await _userStore.SaveUserAsync(user);
             // return non hashed password once to let client store it
             login.ProviderData = password;
+
+            var player = new Player();
+            player.UserId = user.UserId;
+            player.Gamertag = login.ProviderId;
+
+            await _playerStore.SavePlayerAsync(player);
+            
             return Json(login);
         }
     }
